@@ -1,5 +1,4 @@
 import 'dotenv/config'
-import { LocalStorage } from 'node-localstorage'
 import { Vimeo } from 'vimeo'
 
 interface CredentialsResponse {
@@ -12,15 +11,19 @@ interface CredentialsResponse {
     }
 }
 
-const localStorage = new LocalStorage('./scratch')
-
 const {
     SCOPE = 'public private video_files',
     CLIENT_ID = '',
     CLIENT_SECRET = '',
+    ACCESS_TOKEN = '',
 } = process.env
 
 const VIDEO_ID = process.argv[2] ?? ''
+
+if (!ACCESS_TOKEN) {
+    console.log('Please set ACCESS_TOKEN environment variable')
+    process.exit(1)
+}
 
 if (!VIDEO_ID) {
     console.error('Missing video ID')
@@ -31,7 +34,7 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
     process.exit(1)
 }
 
-const client = new Vimeo(CLIENT_ID, CLIENT_SECRET)
+const client = new Vimeo(CLIENT_ID, CLIENT_SECRET, ACCESS_TOKEN)
 
 async function generateClientCredentials(
     scope: string
@@ -65,14 +68,6 @@ async function getVideoMetadata(id: string): Promise<any> {
 }
 
 async function main(): Promise<void> {
-    let accessToken = localStorage.getItem('accessToken')
-
-    if (!accessToken) {
-        const response = await generateClientCredentials(SCOPE)
-        accessToken = response.access_token
-        localStorage.setItem('accessToken', accessToken)
-    }
-
     const metadata = await getVideoMetadata(VIDEO_ID)
     console.log(metadata)
 }
